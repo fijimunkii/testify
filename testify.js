@@ -5,8 +5,12 @@ var runTest = require('./lib/run-test');
 var testSync = {};
 
 module.exports = (req, res) => {
-  var key = ['username','reponame','branchname','prod'].map(d => req.query[d]).join('/');
+  var key = ['username','reponame','branchname','prod'].map(d => req.query[d]).filter(d => d).join('/');
+  res.write('<html><head>');
+  res.write('<body>');
+  res.write('<script>document.title="Testifying - '+key+'";</script>');
   var destination;
+  var keepAliveInterval;
   return Promise.resolve().then(() => {
     if (testSync[key])
       throw 'TEST_ALREADY_RUNNING';
@@ -17,7 +21,7 @@ module.exports = (req, res) => {
         throw 'Missing query parameter: ' + d;
     }); 
   })
-  .then(() => res.end('OK'))
+  .then(() => { if (req.query.quick) res.end('OK') })
   .then(() => getArtifacts({
     username: req.query.username,
     reponame: req.query.reponame,
@@ -43,19 +47,22 @@ module.exports = (req, res) => {
       artifacts: artifact.url,
       rev: artifact.sha,
       server: server,
-      NODE_ENV: NODE_ENV
+      NODE_ENV: NODE_ENV,
+      res: res
     });
   })
   .then(() => {
-    res.end('OK');
     delete testSync[key];
-    sendMessage(server + ' has testified.');
+    res.write('<script>document.title="✓ - '+key+'";</script>');
+    res.end('OK');
+    return sendMessage(server + ' has testified.');
   })
   .catch(err => {
-    res.status(500).end(err);
+    console.log(err && err.stack || err);
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
-    console.log(err && err.stack || err);
-    sendMessage('Testify FAILED for ' + server + ' : ' + err);
+    res.write('<script>document.title="✗ - '+key+'";</script>');
+    res.end(err);
+    return sendMessage('Testify FAILED for ' + server + ' : ' + err);
   });
 };
