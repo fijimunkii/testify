@@ -9,7 +9,7 @@ module.exports = (req, res) => {
   res.write('<html><head>');
   res.write('<body>');
   res.write('<script>document.title="Testifying - '+key+'";</script>');
-  var destination;
+  var server;
   var keepAliveInterval;
   return Promise.resolve().then(() => {
     if (testSync[key])
@@ -32,7 +32,7 @@ module.exports = (req, res) => {
     var releaseBranch = env.get('release-branch') || 'release';
     var branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
     var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
-    var server = req.query.server && decodeURIComponent(req.query.server);
+    server = req.query.server && decodeURIComponent(req.query.server);
     var servers = env.get(req.query.username+'/'+req.query.reponame+':servers');
     var certPassword = env.get(req.query.username+'/'+req.query.reponame+':certPassword:'+NODE_ENV);
     if (req.query.prod && branchname === releaseBranch)
