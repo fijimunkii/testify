@@ -55,7 +55,7 @@ module.exports = (req, res) => {
     delete testSync[key];
     res.write('<script>document.title="&#x2713; - '+key+'";</script>');
     res.end('OK');
-    return sendMessage(server + ' has testified.');
+    return sendMessage('Testified ' + server);
   })
   .catch(err => {
     console.log(err && err.stack || err);
