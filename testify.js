@@ -53,7 +53,7 @@ module.exports = (req, res) => {
   })
   .then(() => {
     delete testSync[key];
-    res.write('<script>document.title="✓ - '+key+'";</script>');
+    res.write('<script>document.title="&#x2713; - '+key+'";</script>');
     res.end('OK');
     return sendMessage(server + ' has testified.');
   })
@@ -61,7 +61,7 @@ module.exports = (req, res) => {
     console.log(err && err.stack || err);
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
-    res.write('<script>document.title="✗ - '+key+'";</script>');
+    res.write('<script>document.title="&#x2717; - '+key+'";</script>');
     res.end(err);
     return sendMessage('Testify FAILED for ' + server + ' : ' + err);
   });
