@@ -1,5 +1,6 @@
 var env = require('./env');
 var sendMessage = require('./lib/send-message');
+var sendStatus = require('./lib/send-status');
 var getArtifacts = require('./lib/get-artifacts');
 var runTest = require('./lib/run-test');
 var testSync = {};
@@ -9,6 +10,7 @@ module.exports = (req, res) => {
   res.write('<html><head>');
   res.write('<body>');
   res.write('<script>document.title="Testifying - '+key+'";</script>');
+  var rev;
   var server;
   var keepAliveInterval;
   return Promise.resolve().then(() => {
@@ -29,6 +31,7 @@ module.exports = (req, res) => {
   }))
   .then(artifacts => {
     var artifact = artifacts[0];
+    rev = artifact.sha;
     var releaseBranch = env.get('release-branch') || 'release';
     var branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
     var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
@@ -41,7 +44,15 @@ module.exports = (req, res) => {
       server = server || servers.stg[0]; 
     else
       server = server || branchname + servers.dev[0];
-    return runTest({
+    return sendStatus({
+      username: req.query.username,
+      reponame: req.query.reponame,
+      rev: rev,
+      state: 'pending',
+      description: 'Testifying '+server,
+      target_url: 'TODO'
+    })
+    .then(() => runTest({
       project: req.query.username + '-' + req.query.reponame,
       certPassword: certPassword,
       artifacts: artifact.url,
@@ -49,20 +60,39 @@ module.exports = (req, res) => {
       server: server,
       NODE_ENV: NODE_ENV,
       res: res
-    });
+    }));
   })
   .then(() => {
-    delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("9989")+" '+key+'";</script>');
     res.end('OK');
-    return sendMessage('Testified ' + server);
   })
+  .then(() => sendStatus({
+    username: req.query.username,
+    reponame: req.query.reponame,
+    rev: rev,
+    state: 'success',
+    description: 'Testified '+server,
+    target_url: 'TODO'
+  }))
+  .then(() => sendMessage('Testified ' + server))
+  .then(() => { delete testSync[key]; })
   .catch(err => {
     console.log(err && err.stack || err);
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("10008")+" '+key+'";</script>');
     res.end(err);
-    return sendMessage('Testify FAILED for ' + server + ' : ' + err);
+    // TODO: include url with message
+    return Promise.all([
+      sendMessage('Testify FAILED for ' + server + ' : ' + err),
+      sendStatus({
+        username: req.query.username,
+        reponame: req.query.reponame,
+        rev: rev,
+        state: 'failure',
+        description: 'Testify FAILED for '+server,
+        target_url: 'TODO'
+      })
+    ]);
   });
 };
