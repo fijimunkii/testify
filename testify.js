@@ -3,6 +3,7 @@ var sendMessage = require('./lib/send-message');
 var sendStatus = require('./lib/send-status');
 var getArtifacts = require('./lib/get-artifacts');
 var runTest = require('./lib/run-test');
+var logdir = require('path').join(__dirname, 'logs');
 var testSync = {};
 
 module.exports = (req, res) => {
@@ -59,7 +60,8 @@ module.exports = (req, res) => {
       rev: artifact.sha,
       server: server,
       NODE_ENV: NODE_ENV,
-      res: res
+      res: res,
+      logdir: logdir
     }));
   })
   .then(() => {
