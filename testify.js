@@ -3,18 +3,20 @@ var sendMessage = require('./lib/send-message');
 var sendStatus = require('./lib/send-status');
 var getArtifacts = require('./lib/get-artifacts');
 var runTest = require('./lib/run-test');
-var logdir = require('path').join(__dirname, 'logs');
 var testSync = {};
 
 module.exports = (req, res) => {
-  var key = ['username','reponame','branchname','prod'].map(d => req.query[d]).filter(d => d).join('/');
-  res.write('<html><head>');
-  res.write('<body>');
-  res.write('<script>document.title="Testifying - '+key+'";</script>');
-  var rev;
-  var server;
-  var keepAliveInterval;
+  var key, logdir, logfiles, targetUrl, rev, server, keepAliveInterval;
   return Promise.resolve().then(() => {
+    key = ['username','reponame','branchname'].map(d => req.query[d]).filter(d => d).join('/');
+    if (req.query.prod) key += '/prod';
+    logdir = require('path').join(__dirname, 'logs', key);
+    logfiles = env.get('LOG_FILES')||['docker.log'];
+    targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
+    res.write('<html><head>');
+    res.write('<body>');
+    res.write('<script>document.title="Testifying - '+key+'";</script>');
+  }).then(() => {
     if (testSync[key])
       throw 'TEST_ALREADY_RUNNING';
     testSync[key] = true;
@@ -50,8 +52,8 @@ module.exports = (req, res) => {
       reponame: req.query.reponame,
       rev: rev,
       state: 'pending',
-      description: 'Testifying '+server,
-      target_url: 'TODO'
+      description: 'Testifying ' + targetUrl,
+      target_url: targetUrl
     })
     .then(() => runTest({
       project: req.query.username + '-' + req.query.reponame,
@@ -61,7 +63,9 @@ module.exports = (req, res) => {
       server: server,
       NODE_ENV: NODE_ENV,
       res: res,
-      logdir: logdir
+      logdir: logdir,
+      logfiles: logfiles,
+      targetUrl: targetUrl
     }));
   })
   .then(() => {
@@ -74,7 +78,7 @@ module.exports = (req, res) => {
     rev: rev,
     state: 'success',
     description: 'Testified '+server,
-    target_url: 'TODO'
+    target_url: targetUrl
   }))
   .then(() => sendMessage('Testified ' + server))
   .then(() => { delete testSync[key]; })
@@ -84,16 +88,15 @@ module.exports = (req, res) => {
       delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("10008")+" '+key+'";</script>');
     res.end(err);
-    // TODO: include url with message
     return Promise.all([
-      sendMessage('Testify FAILED for ' + server + ' : ' + err),
+      sendMessage('Testify FAILED ' + targetUrl),
       sendStatus({
         username: req.query.username,
         reponame: req.query.reponame,
         rev: rev,
         state: 'failure',
-        description: 'Testify FAILED for '+server,
-        target_url: 'TODO'
+        description: 'Testify FAILED: ' + targetUrl,
+        target_url: targetUrl
       })
     ]);
   });

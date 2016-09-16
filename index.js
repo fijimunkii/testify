@@ -14,5 +14,7 @@ app.use(require('hpp')());
 
 app.use('/testify', require('./testify'));
 
+app.use('/logs', require('./logs'));
+
 var port = env.get('PORT')||5555;
 app.listen(port, () => console.log('http://localhost:'+port));
