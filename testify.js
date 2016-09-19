@@ -83,19 +83,23 @@ module.exports = (req, res) => {
   .then(() => sendMessage('Testified ' + server))
   .then(() => { delete testSync[key]; })
   .catch(err => {
+    var reason = '';
+    var reasons = ['REV_CHECK_FAILED','TEST_ALREADY_RUNNING'];
+    if (reasons.indexOf(err) > -1)
+      reason = err; 
     console.log(err && err.stack || err);
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("10008")+" '+key+'";</script>');
     res.end(err);
     return Promise.all([
-      sendMessage('Testify FAILED ' + targetUrl),
+      sendMessage('Testify FAILED ' + targetUrl + ' ' + reason),
       sendStatus({
         username: req.query.username,
         reponame: req.query.reponame,
         rev: rev,
         state: 'failure',
-        description: 'Testify FAILED: ' + targetUrl,
+        description: 'Testify FAILED: ' + targetUrl + ' ' + reason,
         target_url: targetUrl
       })
     ]);
