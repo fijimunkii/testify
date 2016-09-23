@@ -84,7 +84,7 @@ module.exports = (req, res) => {
   .then(() => { delete testSync[key]; })
   .catch(err => {
     var reason = '';
-    var reasons = ['REV_CHECK_FAILED','TEST_ALREADY_RUNNING'];
+    var reasons = ['REV_CHECK_FAILED','TEST_ALREADY_RUNNING','Failed to find successful build'];
     if (reasons.indexOf(err) > -1)
       reason = err; 
     console.log(err && err.stack || err);
