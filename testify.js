@@ -6,38 +6,37 @@ var runTest = require('./lib/run-test');
 var testSync = {};
 
 module.exports = (req, res) => {
-  var key, logdir, logfiles, targetUrl, rev, server, keepAliveInterval;
+  var key, branchname, releaseBranch, logdir, logfiles, targetUrl, rev, server, keepAliveInterval;
   return Promise.resolve().then(() => {
-    key = ['username','reponame','branchname'].map(d => req.query[d]).filter(d => d).join('/');
+    releaseBranch = env.get('RELEASE_BRANCH') || 'release';
+    branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
+    key = [req.query.username,req.query.reponame,branchname].join('/');
     if (req.query.prod) key += '/prod';
     if (req.query.server) key+= '/'+req.query.server;
     logdir = require('path').join(__dirname, 'logs', key);
-    logfiles = env.get('LOG_FILES')||['docker.log'];
+    logfiles = env.get('LOG_FILES') || ['docker.log'];
     targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
     res.write('<html><head>');
     res.write('<body>');
     res.write('<script>document.title="Testifying - '+key+'";</script>');
-  }).then(() => {
     if (testSync[key])
       throw 'TEST_ALREADY_RUNNING';
     testSync[key] = true;
-  }).then(() => {
     ['username','reponame'].forEach(d => {
       if (!req.query[d])
         throw 'Missing query parameter: ' + d;
     }); 
+    if (req.query.quick)
+      res.end('OK');
   })
-  .then(() => { if (req.query.quick) res.end('OK') })
   .then(() => getArtifacts({
     username: req.query.username,
     reponame: req.query.reponame,
-    branchname: req.query.branchname
+    branchname: branchname
   }))
   .then(artifacts => {
     var artifact = artifacts[0];
     rev = artifact.sha;
-    var releaseBranch = env.get('release-branch') || 'release';
-    var branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
     var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
     server = req.query.server && decodeURIComponent(req.query.server);
     var servers = env.get(req.query.username+'/'+req.query.reponame+':servers');
