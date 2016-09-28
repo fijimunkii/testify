@@ -87,7 +87,7 @@ module.exports = (req, res) => {
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("10008")+" '+key+'";</script>');
-    res.end(err);
+    res.end(String(err));
     return Promise.all([
       sendMessage('Testify FAILED ' + targetUrl + ' ' + reason),
       sendStatus({
