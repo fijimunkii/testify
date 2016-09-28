@@ -10,6 +10,7 @@ module.exports = (req, res) => {
   return Promise.resolve().then(() => {
     key = ['username','reponame','branchname'].map(d => req.query[d]).filter(d => d).join('/');
     if (req.query.prod) key += '/prod';
+    if (req.query.server) key+= '/'+req.query.server;
     logdir = require('path').join(__dirname, 'logs', key);
     logfiles = env.get('LOG_FILES')||['docker.log'];
     targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
