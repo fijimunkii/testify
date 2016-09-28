@@ -11,9 +11,7 @@ module.exports = (req, res) => {
     releaseBranch = env.get('RELEASE_BRANCH') || 'release';
     branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
     server = req.query.server && decodeURIComponent(req.query.server);
-    var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
     var servers = env.get(req.query.username+'/'+req.query.reponame+':servers');
-    var certPassword = env.get(req.query.username+'/'+req.query.reponame+':certPassword:'+NODE_ENV);
     if (req.query.prod && branchname === releaseBranch)
       server = server || servers.prod[0];
     else if (branchname === releaseBranch)
@@ -55,11 +53,11 @@ module.exports = (req, res) => {
     })
     .then(() => runTest({
       project: req.query.username + '-' + req.query.reponame,
-      certPassword: certPassword,
       artifacts: artifact.url,
       rev: artifact.sha,
       server: server,
-      NODE_ENV: NODE_ENV,
+      NODE_ENV: (branchname === releaseBranch) ? 'production' : 'development',
+      req: req,
       res: res,
       logdir: logdir,
       logfiles: logfiles,
