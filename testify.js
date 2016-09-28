@@ -10,9 +10,17 @@ module.exports = (req, res) => {
   return Promise.resolve().then(() => {
     releaseBranch = env.get('RELEASE_BRANCH') || 'release';
     branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
-    key = [req.query.username,req.query.reponame,branchname].join('/');
-    if (req.query.prod) key += '/prod';
-    if (req.query.server) key+= '/'+req.query.server;
+    server = req.query.server && decodeURIComponent(req.query.server);
+    var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
+    var servers = env.get(req.query.username+'/'+req.query.reponame+':servers');
+    var certPassword = env.get(req.query.username+'/'+req.query.reponame+':certPassword:'+NODE_ENV);
+    if (req.query.prod && branchname === releaseBranch)
+      server = server || servers.prod[0];
+    else if (branchname === releaseBranch)
+      server = server || servers.stg[0]; 
+    else
+      server = server || branchname + servers.dev[0];
+    key = [req.query.username,req.query.reponame,branchname,server].join('/');
     logdir = require('path').join(__dirname, 'logs', key);
     logfiles = env.get('LOG_FILES') || ['docker.log'];
     targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
@@ -37,16 +45,6 @@ module.exports = (req, res) => {
   .then(artifacts => {
     var artifact = artifacts[0];
     rev = artifact.sha;
-    var NODE_ENV = (branchname === releaseBranch) ? 'production' : 'development';
-    server = req.query.server && decodeURIComponent(req.query.server);
-    var servers = env.get(req.query.username+'/'+req.query.reponame+':servers');
-    var certPassword = env.get(req.query.username+'/'+req.query.reponame+':certPassword:'+NODE_ENV);
-    if (req.query.prod && branchname === releaseBranch)
-      server = server || servers.prod[0];
-    else if (branchname === releaseBranch)
-      server = server || servers.stg[0]; 
-    else
-      server = server || branchname + servers.dev[0];
     return sendStatus({
       username: req.query.username,
       reponame: req.query.reponame,
