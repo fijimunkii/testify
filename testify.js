@@ -80,8 +80,14 @@ module.exports = (req, res) => {
   .then(() => { delete testSync[key]; })
   .catch(err => {
     var reason = '';
-    var reasons = ['REV_CHECK_FAILED','TEST_ALREADY_RUNNING','Failed to find successful build'];
-    if (reasons.indexOf(err) > -1)
+    var reasons = [
+      'REV_CHECK_FAILED',
+      'TEST_ALREADY_RUNNING',
+      'Failed to find successful build',
+      'ENOSPC: no space left on device',
+      'UnexpectedAlertOpen'
+    ];
+    if (reasons.indexOf(String(err && err.stack || err)) > -1)
       reason = err; 
     console.log(err && err.stack || err);
     if (err !== 'TEST_ALREADY_RUNNING')
