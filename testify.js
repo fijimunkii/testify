@@ -6,7 +6,7 @@ var runTest = require('./lib/run-test');
 var testSync = {};
 
 module.exports = (req, res) => {
-  var key, branchname, releaseBranch, logdir, logfiles, targetUrl, rev, server, keepAliveInterval;
+  var key, branchname, releaseBranch, logdir, logfiles, targetUrl, rev, server, keepAliveInterval, dockerTag;
   return Promise.resolve().then(() => {
     releaseBranch = env.get('RELEASE_BRANCH') || 'release';
     branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
@@ -19,8 +19,8 @@ module.exports = (req, res) => {
     else
       server = server || branchname + servers.dev[0];
     key = [req.query.username,req.query.reponame,branchname,server].join('/');
-    logdir = require('path').join(__dirname, 'logs', key);
-    logfiles = env.get('LOG_FILES') || ['docker.log'];
+    logdir = require('path').join('/home/ubuntu/logs/testify/', key);
+    logfiles = env.get('LOG_FILES') || ['test.log','x11vnc.log','selenium.log'];
     targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
     res.write('<html><head>');
     res.write('<body>');
@@ -43,6 +43,7 @@ module.exports = (req, res) => {
   .then(artifacts => {
     var artifact = artifacts[0];
     rev = artifact.sha;
+    dockerTag = req.query.username+'/'+req.query.reponame+'-selenium:'+branchname+'-'+rev;
     return sendStatus({
       username: req.query.username,
       reponame: req.query.reponame,
@@ -55,6 +56,7 @@ module.exports = (req, res) => {
       project: req.query.username + '-' + req.query.reponame,
       artifacts: artifact.url,
       rev: artifact.sha,
+      dockerTag: dockerTag,
       server: server,
       NODE_ENV: (branchname === releaseBranch) ? 'production' : 'development',
       req: req,
