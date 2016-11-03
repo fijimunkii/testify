@@ -6,7 +6,7 @@ var runTest = require('./lib/run-test');
 var testSync = {};
 
 module.exports = (req, res) => {
-  var key, branchname, releaseBranch, logdir, logfiles, targetUrl, rev, server, keepAliveInterval, dockerTag;
+  var key, branchname, releaseBranch, logdir, logfiles, targetUrl, rev, server, keepAliveInterval, dockerTag, extraTests;
   return Promise.resolve().then(() => {
     releaseBranch = env.get('RELEASE_BRANCH') || 'release';
     branchname = (req.query.branchname || releaseBranch).replace(/([^\w\d\s-])/,''); 
@@ -18,6 +18,7 @@ module.exports = (req, res) => {
       server = server || servers.stg[0]; 
     else
       server = server || branchname + servers.dev[0];
+    extraTests = env.get(req.query.username+'/'+req.query.reponame+':extraTests:'+server);
     key = [req.query.username,req.query.reponame,branchname,server].join('/');
     logdir = require('path').join('/home/ubuntu/logs/testify/', key);
     logfiles = env.get('LOG_FILES') || ['test.log','x11vnc.log','selenium.log'];
@@ -63,7 +64,8 @@ module.exports = (req, res) => {
       res: res,
       logdir: logdir,
       logfiles: logfiles,
-      targetUrl: targetUrl
+      targetUrl: targetUrl,
+      extraTests: extraTests
     }));
   })
   .then(() => {
