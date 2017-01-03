@@ -21,7 +21,7 @@ module.exports = (req, res) => {
     extraTests = env.get(req.query.username+'/'+req.query.reponame+':extraTests:'+server);
     key = [req.query.username,req.query.reponame,branchname,server].join('/');
     logdir = require('path').join('/home/ubuntu/logs/testify/', key);
-    logfiles = env.get('LOG_FILES') || ['test.log','x11vnc.log','selenium.log'];
+    logfiles = env.get('LOG_FILES') || ['test.log','x11vnc.log','novnc.log','selenium.log'];
     targetUrl = 'https://'+env.get('hostname')+'/logs/'+key+'/'+logfiles[0];
     res.write('<html><head>');
     res.write('<body>');
