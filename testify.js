@@ -85,6 +85,7 @@ module.exports = (req, res) => {
   .catch(err => {
     var reason = '';
     var reasons = [
+      'INTEGRITY_CHECK_FAILED',
       'REV_CHECK_FAILED',
       'TEST_ALREADY_RUNNING',
       'Failed to find successful build',
