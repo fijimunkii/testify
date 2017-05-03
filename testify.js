@@ -84,6 +84,7 @@ module.exports = (req, res) => {
   .then(() => { delete testSync[key]; })
   .catch(err => {
     err = String(err && err.stack || err);
+    console.log(err);
     var reasons = [
       'INTEGRITY_CHECK_FAILED',
       'REV_CHECK_FAILED',
@@ -92,8 +93,9 @@ module.exports = (req, res) => {
       'ENOSPC: no space left on device',
       'UnexpectedAlertOpen'
     ];
-    var reason = reasons.reduce((o,d) => err.indexOf(d) > -1 && d || o, '');
-    console.log(err);
+    var reason = reasons.reduce((o,d) => err.indexOf(d) > -1 && err || o, '');
+    if (reason.length)
+      err = reason;
     if (err !== 'TEST_ALREADY_RUNNING')
       delete testSync[key];
     res.write('<script>document.title=String.fromCharCode("10008")+" '+key+'";</script>');
